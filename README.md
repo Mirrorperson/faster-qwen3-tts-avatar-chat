@@ -1,36 +1,103 @@
 ---
-title: faster-qwen3-tts
-author: andito
-emoji: 🎙
-tags: [text-to-speech, streaming, cuda-graphs]
+title: faster-qwen3-tts-avatar
+emoji: 🎙🧑
+tags: [text-to-speech, avatar, live-portrait, cuda-graphs]
 colorFrom: indigo
 colorTo: blue
 sdk: docker
 app_port: 7860
-preload_from_hub:
-  - nvidia/parakeet-tdt-0.6b-v3
-  - Qwen/Qwen3-TTS-12Hz-0.6B-Base
-  - Qwen/Qwen3-TTS-12Hz-1.7B-Base
-  - Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice
-  - Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
-  - Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
 ---
 
-# Faster Qwen3-TTS Demo
+# Faster Qwen3-TTS + Live Avatar Chat
 
-This Space hosts the demo UI for **faster-qwen3-tts** with streaming audio, TTFA/RTF metrics, voice clone, custom voices, and voice design.
+A real-time voice chat demo combining **Qwen3-TTS** for speech synthesis with **FasterLivePortrait** for audio-driven avatar animation.
 
-## Run locally (no Docker)
+---
+### 🌟 Credits & Foundations
+This project is built upon the amazing work of:
+- [faster-qwen3-tts](https://github.com/andimarafioti/faster-qwen3-tts) by [Andi Marafioti](https://github.com/andimarafioti)
+- [FasterLivePortrait](https://github.com/warmshao/FasterLivePortrait) by [warmshao](https://github.com/warmshao)
+- [Ollama](https://ollama.com)
+---
 
-```bash
-pip install "faster-qwen3-tts[demo]"
-python server.py --model Qwen/Qwen3-TTS-12Hz-0.6B-Base
-# open http://localhost:7860
+```
+User message → Qwen3 LLM (Ollama) → Qwen3-TTS → WAV audio
+                                                       ↓
+                                         FasterLivePortrait (gRPC)
+                                                       ↓
+                                           Lip-synced avatar video
 ```
 
-## Run with Docker
+## 🚀 Beginner's Quickstart Guide
 
-```bash
+This guide ensures everything works by running the services in three separate terminals. This approach is the most reliable for GPU-accelerated environments.
+
+### Prerequisites
+
+1.  **NVIDIA GPU**: You need a modern NVIDIA GPU and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed.
+2.  **Ollama**: Install it locally from [ollama.com](https://ollama.com).
+3.  **Docker**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and make sure it's running.
+
+---
+
+### Step 1: Prepare your Network
+Open a terminal and run this once. It creates a "private room" where your containers can talk to each other.
+```powershell
+docker network create avatar-net
+```
+
+---
+
+### Step 2: Start the AI Brain (Terminal 1)
+Open a new terminal and run:
+```powershell
+# 1. Download the brain
+ollama pull qwen3.5:9b
+
+# 2. Start it
+set OLLAMA_HOST=0.0.0.0
+ollama serve
+```
+
+---
+
+### Step 3: Start the Avatar Engine (Terminal 2)
+Open another terminal, navigate to your repo, and run:
+```powershell
+# 1. Clear any old container and start fresh
+docker rm -f faster_liveportrait 2>nul & docker run -it --rm --gpus all --name faster_liveportrait --network avatar-net -v %cd%\faster_liveportrait:/root/FasterLivePortrait -p 50051:50051 shaoguo/faster_liveportrait:v3 /bin/bash
+
+# 2. (Inside the container) Setup and launch the server
+cd /root/FasterLivePortrait
+pip install -r requirements.txt
+pip install grpcio grpcio-tools transformers librosa
+python flp_grpc_server.py
+```
+*Wait for: `FasterLivePortrait gRPC Server is listening on port 50051...`*
+
+---
+
+### Step 4: Start the Chat UI (Terminal 3)
+Open one last terminal and run:
+```powershell
+# 1. Build the app image
 docker build -t faster-qwen3-tts-demo .
-docker run --gpus all -p 7860:7860 faster-qwen3-tts-demo
+
+# 2. Clear any old app container and launch
+docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all --network avatar-net -p 7860:7860 -v %cd%\app.py:/app/app.py -v %cd%\faster_liveportrait:/app/faster_liveportrait -v %cd%\hf_cache:/hf_cache -e HF_HOME=/hf_cache -e OLLAMA_Service_URL=http://host.docker.internal:11434/api/chat --dns 8.8.8.8 --add-host host.docker.internal:host-gateway faster-qwen3-tts-demo bash -c "pip install grpcio grpcio-tools scipy && python3 /app/app.py"
 ```
+
+---
+
+### Step 5: Start Chatting!
+1.  Open Chrome/Edge to: **http://localhost:7860**
+2.  Upload a clear face photo on the left.
+3.  Type a message and watch your AI avatar come to life!
+
+---
+
+## Architecture Overview
+
+- **`app.py`**: The main brain that combines TTS, the UI, and the gRPC connection.
+- **`flp_grpc_server.py`**: The specialized animation server.
+- **`avatar-net`**: The virtual bridge connecting everything.

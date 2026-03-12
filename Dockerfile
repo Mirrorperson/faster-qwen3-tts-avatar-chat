@@ -13,12 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY . /app
 
+# 1. Copy only requirements first to cache dependencies
+COPY requirements.txt /app/
+
+# 2. Install large dependencies (only reruns if requirements.txt changes)
 RUN python3 -m pip install --upgrade pip \
     && python3 -m pip install --index-url https://download.pytorch.org/whl/cu126 torch torchaudio \
     && python3 -m pip install "faster-qwen3-tts[demo]" \
     && python3 -m pip install -r requirements.txt
 
+# 3. Copy the rest of the app (changes to app.py won't break the pip cache)
+COPY . /app
+
 EXPOSE 7860
-CMD ["python3", "server.py", "--host", "0.0.0.0"]
+CMD ["python3", "app.py"]

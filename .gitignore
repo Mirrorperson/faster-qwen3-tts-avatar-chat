@@ -1,0 +1,39 @@
+# Large models and assets
+hf_cache/
+hf_cache*
+faster_liveportrait/checkpoints/
+faster_liveportrait/results/
+faster_liveportrait/weights/
+# If you want to ignore the whole folder because it's a separate repo/submodule:
+faster_liveportrait/
+
+# Python temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Media and logs
+*.wav
+*.mp4
+*.log
+
+# Docker specific
+.dockerignore
+docker-compose.yml
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific ignores
+runCommand.txt
