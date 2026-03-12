@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package avatar;
+
+service AvatarService {
+  // Simple Unary RPC: Send complete audio/img, receive complete video
+  rpc AnimateAvatar (AvatarRequest) returns (AvatarResponse) {}
+}
+
+message AvatarRequest {
+  bytes source_image = 1;  // JPEG/PNG bytes of the face
+  bytes driving_audio = 2; // WAV bytes of the TTS speech
+}
+
+message AvatarResponse {
+  bytes video_output = 1;  // MP4 bytes of the generated animation
+}

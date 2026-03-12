@@ -2,10 +2,11 @@
 hf_cache/
 hf_cache*
 faster_liveportrait/checkpoints/
-faster_liveportrait/results/
 faster_liveportrait/weights/
-# If you want to ignore the whole folder because it's a separate repo/submodule:
-faster_liveportrait/
+faster_liveportrait/results/
+faster_liveportrait/assets/
+# Allow the scripts, but block the .git folder inside if we don't want it as a submodule
+faster_liveportrait/.git/
 
 # Python temporary files
 __pycache__/
