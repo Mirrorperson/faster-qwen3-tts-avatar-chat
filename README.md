@@ -21,8 +21,7 @@ This project is built upon the amazing work of:
 ---
 
 ### 🎥 Demo
-![AI Avatar Chat Demo](demo.mp4)
-
+https://github.com/user-attachments/assets/67b532ce-ed97-46b4-87e4-8cb0675f58da
 ---
 
 ```
