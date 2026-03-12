@@ -1,0 +1,15 @@
+# Start from the heavy base image
+FROM shaoguo/faster_liveportrait:v3
+
+# Set working directory
+WORKDIR /root/FasterLivePortrait
+
+# 1. Copy the requirements first to cache them
+COPY faster_liveportrait/requirements.txt .
+
+# 2. Install everything (This is the one-time "Setup" phase)
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir grpcio grpcio-tools transformers librosa omegaconf munch
+
+# This image is now ready to run flp_grpc_server.py instantly
+CMD ["python", "flp_grpc_server.py"]

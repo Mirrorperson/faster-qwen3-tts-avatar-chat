@@ -20,6 +20,11 @@ This project is built upon the amazing work of:
 - [Ollama](https://ollama.com)
 ---
 
+### 🎥 Demo
+![AI Avatar Chat Demo](demo.mp4)
+
+---
+
 ```
 User message → Qwen3 LLM (Ollama) → Qwen3-TTS → WAV audio
                                                        ↓
@@ -56,14 +61,11 @@ ollama serve
 ### Step 2: Start the Avatar Engine (Terminal 2)
 Open another terminal, navigate to your repo, and run:
 ```powershell
-# 1. Clear any old container and start fresh
-docker rm -f faster_liveportrait 2>nul & docker run -it --rm --gpus all --name faster_liveportrait -v %cd%\faster_liveportrait:/root/FasterLivePortrait -p 50051:50051 shaoguo/faster_liveportrait:v3 /bin/bash
+# 1. Build the engine image (This handles all the pip installs automatically)
+docker build -t my-avatar-engine -f Dockerfile.avatar .
 
-# 2. (Inside the container) Setup and launch the server
-cd /root/FasterLivePortrait
-pip install -r requirements.txt
-pip install grpcio grpcio-tools transformers librosa
-python flp_grpc_server.py
+# 2. Start it instantly
+docker rm -f faster_liveportrait 2>nul & docker run -it --rm --gpus all --name faster_liveportrait -v %cd%\faster_liveportrait:/root/FasterLivePortrait -p 50051:50051 my-avatar-engine
 ```
 *Wait for: `FasterLivePortrait gRPC Server is listening on port 50051...`*
 
@@ -76,7 +78,7 @@ Open one last terminal and run:
 docker build -t faster-qwen3-tts-demo .
 
 # 2. Clear any old app container and launch
-docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all -p 7860:7860 -v %cd%\app.py:/app/app.py -v %cd%\hf_cache:/hf_cache -e HF_HOME=/hf_cache -e OLLAMA_Service_URL=http://host.docker.internal:11434/api/chat --dns 8.8.8.8 --add-host host.docker.internal:host-gateway faster-qwen3-tts-demo bash -c "pip install grpcio grpcio-tools scipy && python3 /app/app.py"
+docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all -p 7860:7860 -v %cd%\app.py:/app/app.py -v %cd%\faster_liveportrait:/app/faster_liveportrait -v %cd%\hf_cache:/hf_cache -e HF_HOME=/hf_cache -e OLLAMA_Service_URL=http://host.docker.internal:11434/api/chat --dns 8.8.8.8 --add-host host.docker.internal:host-gateway faster-qwen3-tts-demo bash -c "pip install grpcio grpcio-tools scipy && python3 /app/app.py"
 ```
 
 ---
