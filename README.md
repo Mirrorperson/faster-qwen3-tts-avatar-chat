@@ -30,26 +30,18 @@ User message → Qwen3 LLM (Ollama) → Qwen3-TTS → WAV audio
 
 ## 🚀 Beginner's Quickstart Guide
 
-This guide ensures everything works by running the services in three separate terminals. This approach is the most reliable for GPU-accelerated environments.
+This guide ensures everything works by running the services in three separate terminals. This approach is the most reliable for Windows/GPU environments.
 
 ### Prerequisites
 
-1.  **NVIDIA GPU**: You need a modern NVIDIA GPU and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed.
-2.  **Ollama**: Install it locally from [ollama.com](https://ollama.com).
-3.  **Docker**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and make sure it's running.
+1.  **NVIDIA GPU**: You need a modern NVIDIA GPU and [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+2.  **Ollama**: Install locally from [ollama.com](https://ollama.com).
+3.  **Docker Desktop**: Ensure it is running.
 
 ---
 
-### Step 1: Prepare your Network
-Open a terminal and run this once. It creates a "private room" where your containers can talk to each other.
-```powershell
-docker network create avatar-net
-```
-
----
-
-### Step 2: Start the AI Brain (Terminal 1)
-Open a new terminal and run:
+### Step 1: Start the AI Brain (Terminal 1)
+Open a terminal and run:
 ```powershell
 # 1. Download the brain
 ollama pull qwen3.5:9b
@@ -61,11 +53,11 @@ ollama serve
 
 ---
 
-### Step 3: Start the Avatar Engine (Terminal 2)
+### Step 2: Start the Avatar Engine (Terminal 2)
 Open another terminal, navigate to your repo, and run:
 ```powershell
 # 1. Clear any old container and start fresh
-docker rm -f faster_liveportrait 2>nul & docker run -it --rm --gpus all --name faster_liveportrait --network avatar-net -v %cd%\faster_liveportrait:/root/FasterLivePortrait -p 50051:50051 shaoguo/faster_liveportrait:v3 /bin/bash
+docker rm -f faster_liveportrait 2>nul & docker run -it --rm --gpus all --name faster_liveportrait -v %cd%\faster_liveportrait:/root/FasterLivePortrait -p 50051:50051 shaoguo/faster_liveportrait:v3 /bin/bash
 
 # 2. (Inside the container) Setup and launch the server
 cd /root/FasterLivePortrait
@@ -77,19 +69,19 @@ python flp_grpc_server.py
 
 ---
 
-### Step 4: Start the Chat UI (Terminal 3)
+### Step 3: Start the Chat UI (Terminal 3)
 Open one last terminal and run:
 ```powershell
 # 1. Build the app image
 docker build -t faster-qwen3-tts-demo .
 
 # 2. Clear any old app container and launch
-docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all --network avatar-net -p 7860:7860 -v %cd%\app.py:/app/app.py -v %cd%\faster_liveportrait:/app/faster_liveportrait -v %cd%\hf_cache:/hf_cache -e HF_HOME=/hf_cache -e OLLAMA_Service_URL=http://host.docker.internal:11434/api/chat --dns 8.8.8.8 --add-host host.docker.internal:host-gateway faster-qwen3-tts-demo bash -c "pip install grpcio grpcio-tools scipy && python3 /app/app.py"
+docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all -p 7860:7860 -v %cd%\app.py:/app/app.py -v %cd%\hf_cache:/hf_cache -e HF_HOME=/hf_cache -e OLLAMA_Service_URL=http://host.docker.internal:11434/api/chat --dns 8.8.8.8 --add-host host.docker.internal:host-gateway faster-qwen3-tts-demo bash -c "pip install grpcio grpcio-tools scipy && python3 /app/app.py"
 ```
 
 ---
 
-### Step 5: Start Chatting!
+### Step 4: Start Chatting!
 1.  Open Chrome/Edge to: **http://localhost:7860**
 2.  Upload a clear face photo on the left.
 3.  Type a message and watch your AI avatar come to life!
@@ -100,4 +92,4 @@ docker rm -f tts_app 2>nul & docker run -it --rm --name tts_app --gpus all --net
 
 - **`app.py`**: The main brain that combines TTS, the UI, and the gRPC connection.
 - **`flp_grpc_server.py`**: The specialized animation server.
-- **`avatar-net`**: The virtual bridge connecting everything.
+- **`host.docker.internal`**: The bridge connecting your containers to Ollama and each other.
